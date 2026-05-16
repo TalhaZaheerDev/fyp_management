@@ -4,12 +4,15 @@ import '../models/project_model.dart';
 class FirestoreService {
   final _db = FirebaseFirestore.instance;
 
-  // Create
+  // Create with timeout
   Future<void> addProject(Project project) async {
-    await _db.collection('projects').add(project.toMap());
+    await _db
+        .collection('projects')
+        .add(project.toMap())
+        .timeout(const Duration(seconds: 5));
   }
 
-  // Read (user-specific)
+  // Read
   Stream<List<Project>> getProjects(String userId) {
     return _db
         .collection('projects')

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'signup_screen.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,22 +15,42 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   final AuthService _auth = AuthService();
 
+  bool isLoading = false;
+
   void login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Enter email & password")));
+      return;
+    }
+
+    setState(() => isLoading = true);
+
     final user = await _auth.login(
       emailController.text.trim(),
       passwordController.text.trim(),
     );
 
+    setState(() => isLoading = false);
+
     if (user != null) {
-      ScaffoldMessenger.of(
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Login Successful")));
-      // TODO: Navigate to Dashboard
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
     } else {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Login Failed")));
     }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -50,7 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: login, child: const Text("Login")),
+
+            isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(onPressed: login, child: const Text("Login")),
+
             TextButton(
               onPressed: () {
                 Navigator.pushReplacement(

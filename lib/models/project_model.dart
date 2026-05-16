@@ -31,12 +31,12 @@ class Project {
   factory Project.fromMap(String id, Map<String, dynamic> map) {
     return Project(
       id: id,
-      title: map['title'],
-      description: map['description'],
-      technologies: map['technologies'],
-      supervisor: map['supervisor'],
-      status: map['status'],
-      userId: map['userId'],
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      technologies: map['technologies'] ?? '',
+      supervisor: map['supervisor'] ?? '',
+      status: map['status'] ?? '',
+      userId: map['userId'] ?? '',
     );
   }
 }
