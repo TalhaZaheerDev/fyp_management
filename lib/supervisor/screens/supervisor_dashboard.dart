@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fyp_management/models/project_model.dart';
+import 'package:fyp_management/chat/chat_list_screen.dart'; // ✅ NEW
 import '../services/supervisor_firestore_service.dart';
 import 'project_review_screen.dart';
 import 'profile_screen.dart';
@@ -30,6 +31,20 @@ class SupervisorDashboard extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
+
+      /// ✅ FLOATING CHAT BUTTON
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.chat, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ChatListScreen(isStudent: false),
+            ),
+          );
+        },
+      ),
 
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -151,7 +166,7 @@ class SupervisorDashboard extends StatelessWidget {
 
                       const SizedBox(height: 10),
 
-                      /// STUDENT NAME (instead of ID)
+                      /// STUDENT USERNAME
                       FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
                             .collection('users')

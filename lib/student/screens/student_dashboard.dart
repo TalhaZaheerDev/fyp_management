@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fyp_management/models/project_model.dart';
+import 'package:fyp_management/chat/chat_list_screen.dart';
 import '../services/student_firestore_service.dart';
 import 'add_project_screen.dart';
 import 'project_detail_screen.dart';
@@ -18,11 +19,76 @@ class StudentDashboard extends StatelessWidget {
     return Colors.orange;
   }
 
-  // ✅ UPDATED (duration-based)
   double calculateProgress(int count, int totalWeeks) {
     double value = count / totalWeeks;
     if (value > 1) value = 1;
     return value;
+  }
+
+  /// ✅ PREMIUM DELETE DIALOG
+  Future<bool?> showDeleteDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Delete Project",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Are you sure you want to delete this project? This action cannot be undone.",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        "Cancel",
+                        style: GoogleFonts.poppins(color: Colors.black54),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        "Delete",
+                        style: GoogleFonts.poppins(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -32,6 +98,20 @@ class StudentDashboard extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
+
+      /// CHAT BUTTON
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.chat, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ChatListScreen(isStudent: true),
+            ),
+          );
+        },
+      ),
 
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -109,12 +189,10 @@ class StudentDashboard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// TOP ROW
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Icon(Icons.folder_open, color: Colors.black87),
-
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -138,7 +216,6 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 10),
 
-                      /// TITLE
                       Text(
                         p.title,
                         style: GoogleFonts.poppins(
@@ -149,7 +226,6 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 6),
 
-                      /// DESCRIPTION
                       Text(
                         p.description,
                         maxLines: 2,
@@ -162,7 +238,6 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 10),
 
-                      /// SUPERVISOR
                       FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
                             .collection('users')
@@ -190,7 +265,6 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 12),
 
-                      /// PROGRESS (UPDATED)
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('progress')
@@ -205,7 +279,7 @@ class StudentDashboard extends StatelessWidget {
 
                           double progress = calculateProgress(
                             docs.length,
-                            p.totalWeeks, // ✅ KEY CHANGE
+                            p.totalWeeks,
                           );
 
                           return Column(
@@ -222,7 +296,7 @@ class StudentDashboard extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "${(progress * 100).toInt()}% completed (${docs.length}/${p.totalWeeks} weeks)",
+                                "${(progress * 100).toInt()}% (${docs.length}/${p.totalWeeks})",
                                 style: GoogleFonts.poppins(fontSize: 11),
                               ),
                             ],
@@ -232,90 +306,12 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 8),
 
-                      /// DELETE
                       Align(
                         alignment: Alignment.centerRight,
                         child: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) {
-                                return Dialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        /// TITLE
-                                        Text(
-                                          "Delete Project",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-
-                                        const SizedBox(height: 8),
-
-                                        /// MESSAGE
-                                        Text(
-                                          "Are you sure you want to delete this project? This action cannot be undone.",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-
-                                        const SizedBox(height: 20),
-
-                                        /// ACTIONS
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, false),
-                                              child: Text(
-                                                "Cancel",
-                                                style: GoogleFonts.poppins(
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            ElevatedButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, true),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.black,
-                                                elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                "Delete",
-                                                style: GoogleFonts.poppins(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
+                            final confirm = await showDeleteDialog(context);
 
                             if (confirm == true) {
                               await service.deleteProject(p.id);

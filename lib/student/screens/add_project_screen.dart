@@ -39,7 +39,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
 
     setState(() {
       supervisors = snapshot.docs
-          .map((doc) => {'id': doc.id, 'email': doc['email']})
+          .map(
+            (doc) => {'id': doc.id, 'username': doc['username'] ?? 'No Name'},
+          )
           .toList();
     });
   }
@@ -65,9 +67,25 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       totalWeeks: selectedWeeks,
     );
 
-    await service.addProject(project);
+    /// ✅ STEP 1: CREATE PROJECT
+    final doc = await FirebaseFirestore.instance
+        .collection('projects')
+        .add(project.toMap());
+
+    /// ✅ STEP 2: CREATE CHAT ROOM
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(doc.id) // 🔥 IMPORTANT: projectId
+        .set({
+          'participants': [user.uid, selectedSupervisor],
+        });
 
     if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Project Created")));
+
     Navigator.pop(context);
   }
 
@@ -134,7 +152,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                     return DropdownMenuItem<String>(
                       value: sup['id'],
                       child: Text(
-                        sup['email'],
+                        sup['username'],
                         style: GoogleFonts.poppins(fontSize: 12),
                       ),
                     );
