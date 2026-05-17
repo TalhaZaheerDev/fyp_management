@@ -1,18 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/project_model.dart';
+import 'package:fyp_management/models/project_model.dart';
 
-class FirestoreService {
+class StudentFirestoreService {
   final _db = FirebaseFirestore.instance;
 
-  // Create with timeout
   Future<void> addProject(Project project) async {
-    await _db
-        .collection('projects')
-        .add(project.toMap())
-        .timeout(const Duration(seconds: 5));
+    await _db.collection('projects').add(project.toMap());
   }
 
-  // Read
   Stream<List<Project>> getProjects(String userId) {
     return _db
         .collection('projects')
@@ -25,12 +20,10 @@ class FirestoreService {
         );
   }
 
-  // Update
   Future<void> updateProject(Project project) async {
     await _db.collection('projects').doc(project.id).update(project.toMap());
   }
 
-  // Delete
   Future<void> deleteProject(String id) async {
     await _db.collection('projects').doc(id).delete();
   }

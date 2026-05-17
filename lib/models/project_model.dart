@@ -3,7 +3,7 @@ class Project {
   String title;
   String description;
   String technologies;
-  String supervisor;
+  String supervisor; // supervisor UID
   String status;
   String userId;
 
