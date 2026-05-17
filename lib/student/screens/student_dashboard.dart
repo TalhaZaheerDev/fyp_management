@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fyp_management/models/project_model.dart';
@@ -17,9 +18,9 @@ class StudentDashboard extends StatelessWidget {
     return Colors.orange;
   }
 
-  // 🔹 progress = entries / 10 (you can adjust total weeks)
-  double calculateProgress(int count) {
-    double value = count / 10;
+  // ✅ UPDATED (duration-based)
+  double calculateProgress(int count, int totalWeeks) {
+    double value = count / totalWeeks;
     if (value > 1) value = 1;
     return value;
   }
@@ -30,16 +31,27 @@ class StudentDashboard extends StatelessWidget {
     final service = StudentFirestoreService();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5D6D6),
+      backgroundColor: const Color(0xFFFFFFFF),
+
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5D6D6),
+        backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.arrow_back, color: Colors.black),
-        title: const Text("Task List", style: TextStyle(color: Colors.black)),
+        title: Text(
+          "My Projects",
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
+            icon: const Icon(Icons.add, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddProjectScreen()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.person, color: Colors.black),
@@ -53,17 +65,6 @@ class StudentDashboard extends StatelessWidget {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.black,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddProjectScreen()),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
-
       body: StreamBuilder<List<Project>>(
         stream: service.getProjects(user.uid),
         builder: (context, snapshot) {
@@ -74,11 +75,16 @@ class StudentDashboard extends StatelessWidget {
           final projects = snapshot.data!;
 
           if (projects.isEmpty) {
-            return const Center(child: Text("No Projects"));
+            return Center(
+              child: Text(
+                "No Projects Yet",
+                style: GoogleFonts.poppins(color: Colors.black54),
+              ),
+            );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             itemCount: projects.length,
             itemBuilder: (context, i) {
               final p = projects[i];
@@ -93,41 +99,37 @@ class StudentDashboard extends StatelessWidget {
                   );
                 },
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 18),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 🔹 Top Row
+                      /// TOP ROW
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.folder, color: Colors.blue),
+                          const Icon(Icons.folder_open, color: Colors.black87),
+
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: getStatusColor(p.status).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
+                              color: getStatusColor(p.status).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               p.status,
-                              style: TextStyle(
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
                                 color: getStatusColor(p.status),
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -136,28 +138,59 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 10),
 
-                      // 🔹 Title
+                      /// TITLE
                       Text(
                         p.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
-                      // 🔹 Description
+                      /// DESCRIPTION
                       Text(
                         p.description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.grey),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      /// SUPERVISOR
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(p.supervisor)
+                            .get(),
+                        builder: (context, snap) {
+                          if (!snap.hasData) {
+                            return const Text("Supervisor: ...");
+                          }
+
+                          final data =
+                              snap.data!.data() as Map<String, dynamic>?;
+
+                          final username = data?['username'] ?? "Unknown";
+
+                          return Text(
+                            "Supervisor: $username",
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.black54,
+                            ),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 12),
 
-                      // 🔹 REAL Progress from Firestore
+                      /// PROGRESS (UPDATED)
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('progress')
@@ -169,21 +202,28 @@ class StudentDashboard extends StatelessWidget {
                           }
 
                           final docs = progressSnapshot.data!.docs;
-                          double progress = calculateProgress(docs.length);
+
+                          double progress = calculateProgress(
+                            docs.length,
+                            p.totalWeeks, // ✅ KEY CHANGE
+                          );
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              LinearProgressIndicator(
-                                value: progress,
-                                backgroundColor: Colors.grey[300],
-                                color: Colors.black,
-                                minHeight: 6,
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  backgroundColor: const Color(0xFFE5E7EB),
+                                  color: Colors.black,
+                                  minHeight: 6,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "${(progress * 100).toInt()}% completed",
-                                style: const TextStyle(fontSize: 12),
+                                "${(progress * 100).toInt()}% completed (${docs.length}/${p.totalWeeks} weeks)",
+                                style: GoogleFonts.poppins(fontSize: 11),
                               ),
                             ],
                           );
@@ -192,19 +232,96 @@ class StudentDashboard extends StatelessWidget {
 
                       const SizedBox(height: 8),
 
-                      // 🔹 Bottom Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Supervisor Assigned",
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => service.deleteProject(p.id),
-                          ),
-                        ],
+                      /// DELETE
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) {
+                                return Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        /// TITLE
+                                        Text(
+                                          "Delete Project",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 8),
+
+                                        /// MESSAGE
+                                        Text(
+                                          "Are you sure you want to delete this project? This action cannot be undone.",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 20),
+
+                                        /// ACTIONS
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: Text(
+                                                "Cancel",
+                                                style: GoogleFonts.poppins(
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.black,
+                                                elevation: 0,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                "Delete",
+                                                style: GoogleFonts.poppins(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+
+                            if (confirm == true) {
+                              await service.deleteProject(p.id);
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),

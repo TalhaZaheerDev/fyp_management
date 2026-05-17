@@ -3,9 +3,10 @@ class Project {
   String title;
   String description;
   String technologies;
-  String supervisor; // supervisor UID
+  String supervisor;
   String status;
   String userId;
+  int totalWeeks; // ✅ NEW
 
   Project({
     required this.id,
@@ -15,6 +16,7 @@ class Project {
     required this.supervisor,
     required this.status,
     required this.userId,
+    required this.totalWeeks, // ✅ NEW
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +27,7 @@ class Project {
       'supervisor': supervisor,
       'status': status,
       'userId': userId,
+      'totalWeeks': totalWeeks, // ✅ NEW
     };
   }
 
@@ -37,6 +40,7 @@ class Project {
       supervisor: map['supervisor'] ?? '',
       status: map['status'] ?? '',
       userId: map['userId'] ?? '',
+      totalWeeks: map['totalWeeks'] ?? 24, // default 6 months
     );
   }
 }

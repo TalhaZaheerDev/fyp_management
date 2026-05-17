@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fyp_management/models/project_model.dart';
+import '../../../models/project_model.dart';
 import '../services/student_firestore_service.dart';
 
 class AddProjectScreen extends StatefulWidget {
@@ -17,8 +18,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   final tech = TextEditingController();
 
   String? selectedSupervisor;
-  List<Map<String, dynamic>> supervisors = [];
+  int selectedWeeks = 24;
 
+  List<Map<String, dynamic>> supervisors = [];
   final service = StudentFirestoreService();
 
   @override
@@ -33,6 +35,8 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         .where('role', isEqualTo: 'supervisor')
         .get();
 
+    if (!mounted) return;
+
     setState(() {
       supervisors = snapshot.docs
           .map((doc) => {'id': doc.id, 'email': doc['email']})
@@ -43,51 +47,192 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   void save() async {
     final user = FirebaseAuth.instance.currentUser!;
 
+    if (selectedSupervisor == null || title.text.isEmpty || desc.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Fill all fields")));
+      return;
+    }
+
     final project = Project(
       id: '',
-      title: title.text,
-      description: desc.text,
-      technologies: tech.text,
+      title: title.text.trim(),
+      description: desc.text.trim(),
+      technologies: tech.text.trim(),
       supervisor: selectedSupervisor!,
       status: "Pending",
       userId: user.uid,
+      totalWeeks: selectedWeeks,
     );
 
     await service.addProject(project);
 
-    if (!mounted) return; // ✅ FIX
-
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Project")),
-      body: Column(
-        children: [
-          TextField(controller: title),
-          TextField(controller: desc),
-          TextField(controller: tech),
+      backgroundColor: const Color(0xFFFFFFFF),
 
-          DropdownButton<String>(
-            value: selectedSupervisor,
-            hint: const Text("Select Supervisor"),
-            items: supervisors.map<DropdownMenuItem<String>>((sup) {
-              return DropdownMenuItem<String>(
-                value: sup['id'] as String,
-                child: Text(sup['email'] as String),
-              );
-            }).toList(),
-            onChanged: (v) {
-              setState(() {
-                selectedSupervisor = v;
-              });
-            },
+      /// APP BAR
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          "Add Project",
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
           ),
+        ),
+      ),
 
-          ElevatedButton(onPressed: save, child: const Text("Save")),
-        ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 10),
+
+            /// TITLE
+            _label("Project Title"),
+            _input(title, hint: "Enter project title"),
+
+            const SizedBox(height: 15),
+
+            /// DESCRIPTION
+            _label("Description"),
+            _input(desc, hint: "Enter description", maxLines: 4),
+
+            const SizedBox(height: 15),
+
+            /// TECHNOLOGIES
+            _label("Technologies"),
+            _input(tech, hint: "Flutter, Firebase, ML..."),
+
+            const SizedBox(height: 15),
+
+            /// SUPERVISOR
+            _label("Select Supervisor"),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F3F6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedSupervisor,
+                  isExpanded: true,
+                  hint: Text(
+                    "Choose supervisor",
+                    style: GoogleFonts.poppins(fontSize: 12),
+                  ),
+                  items: supervisors.map((sup) {
+                    return DropdownMenuItem<String>(
+                      value: sup['id'],
+                      child: Text(
+                        sup['email'],
+                        style: GoogleFonts.poppins(fontSize: 12),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() => selectedSupervisor = v);
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            /// DURATION
+            _label("Project Duration"),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F3F6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: selectedWeeks,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: 24, child: Text("6 Months")),
+                    DropdownMenuItem(value: 48, child: Text("12 Months")),
+                  ],
+                  onChanged: (v) {
+                    setState(() => selectedWeeks = v!);
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            /// SAVE BUTTON
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  "Create Project",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// LABEL
+  Widget _label(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 12,
+        color: const Color.fromARGB(221, 123, 123, 123),
+      ),
+    );
+  }
+
+  /// INPUT
+  Widget _input(
+    TextEditingController controller, {
+    required String hint,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 12),
+        filled: true,
+        fillColor: const Color(0xFFF1F3F6),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
