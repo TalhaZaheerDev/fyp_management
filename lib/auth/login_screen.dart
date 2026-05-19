@@ -14,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final inputController = TextEditingController(); // ✅ email OR username
+  final inputController = TextEditingController();
   final passwordController = TextEditingController();
 
   bool isLoading = false;
@@ -29,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       String emailToUse;
 
-      /// ✅ CHECK: email OR username
       if (input.contains("@")) {
         emailToUse = input;
       } else {
@@ -45,11 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
         emailToUse = query.docs.first.data()['email'];
       }
 
-      /// ✅ LOGIN
       final userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: emailToUse, password: password);
 
-      /// ✅ FETCH ROLE
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
@@ -88,13 +85,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFFFFF),
+
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            width: 360,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SizedBox(
+            width: 360, // ✅ SAME AS SIGNUP
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -109,8 +106,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
 
+                /// SUBTEXT
                 Text(
                   "Login using Email OR Username",
                   style: GoogleFonts.poppins(
@@ -119,17 +117,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 40),
 
-                /// INPUT LABEL
-                Text(
-                  "Email or Username",
-                  style: GoogleFonts.poppins(fontSize: 12),
-                ),
-
-                const SizedBox(height: 6),
-
-                /// INPUT FIELD
+                /// INPUT
+                _label("Email or Username"),
                 _inputField(
                   controller: inputController,
                   hint: "Enter email or username",
@@ -137,20 +128,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 15),
 
-                /// PASSWORD
-                Text("Password", style: GoogleFonts.poppins(fontSize: 12)),
-
-                const SizedBox(height: 6),
-
+                _label("Password"),
                 _inputField(
                   controller: passwordController,
                   hint: "Enter your password",
                   isPassword: true,
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
-                /// LOGIN BUTTON
+                /// BUTTON
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -158,6 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: isLoading ? null : login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -173,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 15),
 
-                /// SIGNUP
+                /// SIGNUP NAV
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -213,6 +201,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// LABEL (MATCH SIGNUP)
+  Widget _label(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 12,
+        color: const Color.fromARGB(221, 123, 123, 123),
+      ),
+    );
+  }
+
+  /// INPUT (MATCH SIGNUP EXACTLY)
   Widget _inputField({
     required TextEditingController controller,
     required String hint,
@@ -236,9 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   showPassword ? Icons.visibility_off : Icons.visibility,
                   size: 18,
                 ),
-                onPressed: () {
-                  setState(() => showPassword = !showPassword);
-                },
+                onPressed: () => setState(() => showPassword = !showPassword),
               )
             : null,
         border: OutlineInputBorder(
